@@ -285,5 +285,26 @@ class Parser:
         else:
             raise RuntimeError(f"Unexpected token type in primary: {current_type}")
         
-    def parse_declaration(self):  # Thats the first step to implement the variable declaration 
-        pass 
+    def parse_declaration(self):  
+        if self.current_token()[0] == "VAR":
+            self.expect("VAR")
+            if self.current_token()[0] == "ID":
+                var_name = self.current_token()[1]
+                self.expect("ID")
+                if self.current_token()[0] == "COLON":
+                    self.expect("COLON")
+                    # Here we check for the type of the variable 
+                    if self.current_token()[0] == "INTEGER_TYPE":
+                        self.expect("INTEGER_TYPE")
+                        var_type = Type("integer")
+                    elif self.current_token()[0] == "BOOLEAN_TYPE":
+                        self.expect("BOOLEAN_TYPE")
+                        var_type = Type("boolean")
+                    initial_expression = None           # defaulting to None in case there is no initialization
+                    if self.current_token()[0] == "ASSIGN":
+                        self.expect("ASSIGN")
+                        initial_expression = self.parse_expr()
+                    self.expect("SEMICOLON")
+                    return Decl(Identifier(var_name), var_type, initial_expression)
+                        
+            raise RuntimeError("Invalid variable declaration")
