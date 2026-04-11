@@ -49,6 +49,10 @@ class Lexer:
             ("INTEGER", r"[0-9]+"),
             ("BOOL", r"(True|False)\b"),
             ("ID", r"[a-zA-Z_][a-zA-Z0-9_]*"),
+            ("INTEGER_TYPE", r"integer\b"),
+            ("BOOLEAN_TYPE", r"boolean\b"),
+            ("VAR", r"var\b"),
+            ("COLON", r":"),
             ("SKIP", r"\s+"),  # Skip over white space
             ("MISMATCH", r"."),  # Any other character
         ]
@@ -126,6 +130,8 @@ class Parser:
             return self.parse_while()
         elif current_type == "FOR":
             return self.parse_for()
+        elif current_type == "VAR":      # Adding the new case for variable declaration
+            return self.parse_declaration()
         else:
             raise RuntimeError(f"Unexpected token type in statement: {current_type}")
 
@@ -278,3 +284,6 @@ class Parser:
             return expr
         else:
             raise RuntimeError(f"Unexpected token type in primary: {current_type}")
+        
+    def parse_declaration(self):  # Thats the first step to implement the variable declaration 
+        pass 
