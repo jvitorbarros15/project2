@@ -82,6 +82,14 @@ class Parser:
     def __init__(self, tokens: List[Tuple[str, str]]):
         self.tokens = tokens
         self.pos = 0  # Current position in the token list
+        self.invalid = False
+        self.scopes = [{}]
+
+    def in_scope(self): 
+        self.scopes.append({})
+    
+    def out_scope(self):
+        self.scopes.pop()
 
     def current_token(self) -> Tuple[str, str]:
         # Returns the current token without consuming it
@@ -297,10 +305,10 @@ class Parser:
                     # Here we check for the type of the variable 
                     if self.current_token()[0] == "INTEGER_TYPE":
                         self.expect("INTEGER_TYPE")
-                        var_type = Type("integer")
+                        var_type = Type("Integer")
                     elif self.current_token()[0] == "BOOLEAN_TYPE":
                         self.expect("BOOLEAN_TYPE")
-                        var_type = Type("boolean")
+                        var_type = Type("Boolean")
                     initial_expression = None           # defaulting to None in case there is no initialization
                     if self.current_token()[0] == "ASSIGN":
                         self.expect("ASSIGN")
@@ -308,4 +316,4 @@ class Parser:
                     self.expect("SEMICOLON")
                     return Decl(Identifier(var_name), var_type, initial_expression)
                         
-            raise RuntimeError("Invalid variable declaration")
+            raise RuntimeError("Invalid")
