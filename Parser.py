@@ -339,8 +339,6 @@ class Parser:
                     self.expect("SEMICOLON")
                     self.declare(var_name, var_type.type_name)     # forgot to register the variable in the symbol table
                     return Decl(Identifier(var_name), var_type, initial_expression)
-                        
-            raise RuntimeError("Invalid")
         
     def type_check(self, node):
         if isinstance(node, Integer):
@@ -356,3 +354,21 @@ class Parser:
                 self.invalid = True         # var not declared yet
                 return None
             return var_type 
+        
+        elif isinstance(node, Decl):
+            if node.initial_value is not None:
+                expr_type = self.type_check(node.initial_value)
+                if expr_type != node.var_type.type_name:
+                    self.invalid = True
+            
+        elif isinstance(node, Assign):
+            var_type = self.lookup(node.identifier.name)
+            if var_type is None:                                 # again checking if the variable exists
+                self.invalid = True
+                return None
+            expr_type = self.type_check(node.expression)
+            if expr_type != var_type:
+                self.invalid = True
+
+        elif isinstance(node, Put):
+            self.type_check(node.expression)
