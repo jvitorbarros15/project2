@@ -380,22 +380,31 @@ class Parser:
             cond_type = self.type_check(node.condition)
             if cond_type != "Boolean":
                 self.invalid = True
+            self.in_scope() 
             self.type_check(node.then_block)
+            self.out_scope() 
             if node.else_block is not None:
+                self.in_scope()
                 self.type_check(node.else_block)
-        
-        elif isinstance(node, WhileLoop):
-            cond_type = self.type_check(node.condition)
-            if cond_type != "Boolean":
-                self.invalid = True
-            self.type_check(node.body)
-        
+                self.out_scope()
+
         elif isinstance(node, ForLoop):
             start_type = self.type_check(node.start_expr)
             end_type = self.type_check(node.end_expr)
             if start_type != "Integer" or end_type != "Integer":
                 self.invalid = True
+            self.in_scope()
+            self.declare(node.iterator.name, "Integer") 
             self.type_check(node.body)
+            self.out_scope() 
+        
+        elif isinstance(node, WhileLoop):
+            cond_type = self.type_check(node.condition)
+            if cond_type != "Boolean":
+                self.invalid = True
+            self.in_scope() 
+            self.type_check(node.body)
+            self.out_scope() 
         
         elif isinstance(node, Block):
             for stmt in node.statements:
