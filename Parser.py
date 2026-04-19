@@ -48,10 +48,10 @@ class Lexer:
             ("MOD", r"mod\b"),
             ("INTEGER", r"[0-9]+"),
             ("BOOL", r"(True|False)\b"),
-            ("ID", r"[a-zA-Z_][a-zA-Z0-9_]*"),
-            ("INTEGER_TYPE", r"integer\b"),
-            ("BOOLEAN_TYPE", r"boolean\b"),
+            ("INTEGER_TYPE", r"Integer\b"),
+            ("BOOLEAN_TYPE", r"Boolean\b"),
             ("VAR", r"var\b"),
+            ("ID", r"[a-zA-Z_][a-zA-Z0-9_]*"),
             ("COLON", r":"),
             ("SKIP", r"\s+"),  # Skip over white space
             ("MISMATCH", r"."),  # Any other character
@@ -284,7 +284,8 @@ class Parser:
             return expr
         else:
             raise RuntimeError(f"Unexpected token type in primary: {current_type}")
-        
+    
+    # I started this with the code given by you guys because I didnt know if my code was 100% right yet.
     def parse_declaration(self):  
         if self.current_token()[0] == "VAR":
             self.expect("VAR")
