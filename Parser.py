@@ -88,7 +88,7 @@ class Parser:
     # methods to handle the scope
     def in_scope(self): 
         self.scopes.append({})
-    
+                                                # updated the parsing methods with the scopes  
     def out_scope(self):
         self.scopes.pop()
 
@@ -337,6 +337,7 @@ class Parser:
                         self.expect("ASSIGN")
                         initial_expression = self.parse_expr()
                     self.expect("SEMICOLON")
+                    self.declare(var_name, var_type.type_name)     # forgot to register the variable in the symbol table
                     return Decl(Identifier(var_name), var_type, initial_expression)
                         
             raise RuntimeError("Invalid")
