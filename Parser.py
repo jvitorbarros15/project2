@@ -180,15 +180,11 @@ class Parser:
         self.expect("IF")
         condition = self.parse_expr()
         self.expect("THEN")
-        self.in_scope()
         then_block = self.parse_block()
-        self.out_scope()
         else_block = None
         if self.current_token()[0] == "ELSE":
             self.expect("ELSE")
-            self.in_scope()
             else_block = self.parse_block()
-            self.out_scope()
         self.expect("END")
         self.expect("IF")
         self.expect("SEMICOLON")
@@ -198,9 +194,7 @@ class Parser:
         self.expect("WHILE")
         condition = self.parse_expr()
         self.expect("LOOP")
-        self.in_scope()
         body = self.parse_block()
-        self.out_scope()
         self.expect("END")
         self.expect("LOOP")
         self.expect("SEMICOLON")
@@ -215,10 +209,7 @@ class Parser:
         self.expect("RANGE")
         end_expr = self.parse_expr()
         self.expect("LOOP")
-        self.in_scope()
-        self.declare(id_value, "Integer")
         body = self.parse_block()
-        self.out_scope()
         self.expect("END")
         self.expect("LOOP")
         self.expect("SEMICOLON")
@@ -392,8 +383,8 @@ class Parser:
             start_type = self.type_check(node.start_expr)
             end_type = self.type_check(node.end_expr)
             if start_type != "Integer" or end_type != "Integer":
-                self.invalid = True
-            self.in_scope()
+                self.invalid = True                                   # I moved all the scopes for the type_checker to handle
+            self.in_scope()                                           # this will 100% cause a merge conflict, I gotta accept the branch changes
             self.declare(node.iterator.name, "Integer") 
             self.type_check(node.body)
             self.out_scope() 
