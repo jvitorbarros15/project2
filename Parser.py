@@ -85,12 +85,26 @@ class Parser:
         self.invalid = False
         self.scopes = [{}]
 
+    # methods to handle the scope
     def in_scope(self): 
         self.scopes.append({})
     
     def out_scope(self):
         self.scopes.pop()
 
+    def declare(self, name, var_type):
+        if name in self.scopes[-1]:
+            self.invalid = True
+            return False
+        self.scopes[-1][name] = var_type
+        return True
+
+    def lookup(self, name):
+        for scope in reversed(self.scopes):
+            if name in scope:
+                return scope[name]
+        return None
+    
     def current_token(self) -> Tuple[str, str]:
         # Returns the current token without consuming it
         return self.tokens[self.pos]
