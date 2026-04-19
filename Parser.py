@@ -127,6 +127,9 @@ class Parser:
     def parse(self) -> ASTNode:
         block = self.parse_block()
         self.expect("EOF")
+        self.type_check(block)
+        if self.invalid:
+            return Error()
         return block
 
     def parse_block(self) -> Block:
@@ -337,7 +340,6 @@ class Parser:
                         self.expect("ASSIGN")
                         initial_expression = self.parse_expr()
                     self.expect("SEMICOLON")
-                    self.declare(var_name, var_type.type_name)     # forgot to register the variable in the symbol table
                     return Decl(Identifier(var_name), var_type, initial_expression)
         
     def type_check(self, node):
@@ -360,6 +362,7 @@ class Parser:
                 expr_type = self.type_check(node.initial_value)
                 if expr_type != node.var_type.type_name:
                     self.invalid = True
+            self.declare(node.identifier.name, node.var_type.type_name)
             
         elif isinstance(node, Assign):
             var_type = self.lookup(node.identifier.name)
@@ -397,3 +400,38 @@ class Parser:
         elif isinstance(node, Block):
             for stmt in node.statements:
                 self.type_check(stmt)
+
+        elif isinstance(node, Or):
+            for conj in node.conjunctions:
+                t = self.type_check(conj)
+                if t != "Boolean":
+                    self.invalid = True
+            return "Boolean"
+        
+        elif isinstance(node, And):
+            for comp in node.comparisons:
+                t = self.type_check(comp)
+                if t != "Boolean":
+                    self.invalid = True
+            return "Boolean"
+        
+        elif isinstance(node, Comparison):
+            left_type = self.type_check(node.left)
+            right_type = self.type_check(node.right)
+            if left_type != "Integer" or right_type != "Integer":
+                self.invalid = True
+            return "Boolean"
+        
+        elif isinstance(node, Term):
+            for factor in node.factors:
+                t = self.type_check(factor)
+                if t != "Integer":
+                    self.invalid = True
+            return "Integer"
+        
+        elif isinstance(node, Factor):
+            for primary in node.primaries:
+                t = self.type_check(primary)
+                if t != "Integer":
+                    self.invalid = True
+            return "Integer"
