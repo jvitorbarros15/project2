@@ -127,6 +127,9 @@ class Parser:
     def parse(self) -> ASTNode:
         block = self.parse_block()
         self.expect("EOF")
+        self.type_check(block)
+        if self.invalid:
+            return Error()
         return block
 
     def parse_block(self) -> Block:
@@ -177,15 +180,11 @@ class Parser:
         self.expect("IF")
         condition = self.parse_expr()
         self.expect("THEN")
-        self.in_scope()
         then_block = self.parse_block()
-        self.out_scope()
         else_block = None
         if self.current_token()[0] == "ELSE":
             self.expect("ELSE")
-            self.in_scope()
             else_block = self.parse_block()
-            self.out_scope()
         self.expect("END")
         self.expect("IF")
         self.expect("SEMICOLON")
@@ -195,9 +194,7 @@ class Parser:
         self.expect("WHILE")
         condition = self.parse_expr()
         self.expect("LOOP")
-        self.in_scope()
         body = self.parse_block()
-        self.out_scope()
         self.expect("END")
         self.expect("LOOP")
         self.expect("SEMICOLON")
@@ -212,10 +209,7 @@ class Parser:
         self.expect("RANGE")
         end_expr = self.parse_expr()
         self.expect("LOOP")
-        self.in_scope()
-        self.declare(id_value, "Integer")
         body = self.parse_block()
-        self.out_scope()
         self.expect("END")
         self.expect("LOOP")
         self.expect("SEMICOLON")
@@ -337,7 +331,107 @@ class Parser:
                         self.expect("ASSIGN")
                         initial_expression = self.parse_expr()
                     self.expect("SEMICOLON")
-                    self.declare(var_name, var_type.type_name)     # forgot to register the variable in the symbol table
                     return Decl(Identifier(var_name), var_type, initial_expression)
-                        
-            raise RuntimeError("Invalid")
+        
+    def type_check(self, node):
+        if isinstance(node, Integer):
+            return "Integer"
+        
+        elif isinstance(node, Boolean):
+            return "Boolean"
+
+        elif isinstance(node, Identifier):  
+            var_type = self.lookup(node.name)     # here we use the lookup helper to look up the variable in the symbol table
+
+            if var_type is None: 
+                self.invalid = True         # var not declared yet
+                return None
+            return var_type 
+        
+        elif isinstance(node, Decl):
+            if node.initial_value is not None:
+                expr_type = self.type_check(node.initial_value)
+                if expr_type != node.var_type.type_name:
+                    self.invalid = True
+            self.declare(node.identifier.name, node.var_type.type_name)
+            
+        elif isinstance(node, Assign):
+            var_type = self.lookup(node.identifier.name)
+            if var_type is None:                                 # again checking if the variable exists
+                self.invalid = True
+                return None
+            expr_type = self.type_check(node.expression)
+            if expr_type != var_type:
+                self.invalid = True
+
+        elif isinstance(node, Put):
+            self.type_check(node.expression)
+
+        elif isinstance(node, If):
+            cond_type = self.type_check(node.condition)
+            if cond_type != "Boolean":
+                self.invalid = True
+            self.in_scope() 
+            self.type_check(node.then_block)
+            self.out_scope() 
+            if node.else_block is not None:
+                self.in_scope()
+                self.type_check(node.else_block)
+                self.out_scope()
+
+        elif isinstance(node, ForLoop):
+            start_type = self.type_check(node.start_expr)
+            end_type = self.type_check(node.end_expr)
+            if start_type != "Integer" or end_type != "Integer":
+                self.invalid = True                                   # I moved all the scopes for the type_checker to handle
+            self.in_scope()                                           # this will 100% cause a merge conflict, I gotta accept the branch changes
+            self.declare(node.iterator.name, "Integer") 
+            self.type_check(node.body)
+            self.out_scope() 
+        
+        elif isinstance(node, WhileLoop):
+            cond_type = self.type_check(node.condition)
+            if cond_type != "Boolean":
+                self.invalid = True
+            self.in_scope() 
+            self.type_check(node.body)
+            self.out_scope() 
+        
+        elif isinstance(node, Block):
+            for stmt in node.statements:
+                self.type_check(stmt)
+
+        elif isinstance(node, Or):
+            for conj in node.conjunctions:
+                t = self.type_check(conj)
+                if t != "Boolean":
+                    self.invalid = True
+            return "Boolean"
+        
+        elif isinstance(node, And):
+            for comp in node.comparisons:
+                t = self.type_check(comp)
+                if t != "Boolean":
+                    self.invalid = True
+            return "Boolean"
+        
+        elif isinstance(node, Comparison):
+            left_type = self.type_check(node.left)
+            right_type = self.type_check(node.right)
+            if left_type != "Integer" or right_type != "Integer":
+                self.invalid = True
+            return "Boolean"
+        
+        elif isinstance(node, Term):
+            for factor in node.factors:
+                t = self.type_check(factor)
+                if t != "Integer":
+                    self.invalid = True
+            return "Integer"
+        
+        elif isinstance(node, Factor):
+            for primary in node.primaries:
+                t = self.type_check(primary)
+                if t != "Integer":
+                    self.invalid = True
+            return "Integer"
