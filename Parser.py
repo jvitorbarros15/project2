@@ -341,3 +341,18 @@ class Parser:
                     return Decl(Identifier(var_name), var_type, initial_expression)
                         
             raise RuntimeError("Invalid")
+        
+    def type_check(self, node):
+        if isinstance(node, Integer):
+            return "Integer"
+        
+        elif isinstance(node, Boolean):
+            return "Boolean"
+
+        elif isinstance(node, Identifier):  
+            var_type = self.lookup(node.name)     # here we use the lookup helper to look up the variable in the symbol table
+
+            if var_type is None: 
+                self.invalid = True         # var not declared yet
+                return None
+            return var_type 
